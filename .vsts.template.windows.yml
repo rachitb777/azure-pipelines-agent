@@ -15,12 +15,21 @@ steps:
   clean: true
 
 # Build agent layout
-- bash: ./dev.sh layout Release
+- script: |
+    Write-Host "##vso[task.prependpath]C:\Program Files\Git\mingw64\bin"
+    Write-Host "##vso[task.prependpath]C:\Program Files\Git\usr\bin"
+    Write-Host "##vso[task.prependpath]C:\Program Files\Git\bin"
+    dev.cmd layout Release
   workingDirectory: src
   displayName: Build & Layout Release
 
+
 # Run test
-- bash: ./dev.sh test
+- script: |
+    Write-Host "##vso[task.prependpath]C:\Program Files\Git\mingw64\bin"
+    Write-Host "##vso[task.prependpath]C:\Program Files\Git\usr\bin"
+    Write-Host "##vso[task.prependpath]C:\Program Files\Git\bin"
+    dev.cmd test
   workingDirectory: src
   displayName: Test
 
