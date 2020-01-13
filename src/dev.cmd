@@ -23,10 +23,6 @@ echo Unable to resolve location of sh.exe. 1>&2
 exit /b 1
 
 :run
-echo "Prepending Paths"
-echo ##vso[task.prependpath]"C:\Program Files\Git\mingw64\bin"
-echo ##vso[task.prependpath]"C:\Program Files\Git\usr\bin"
-echo ##vso[task.prependpath]"C:\Program Files\Git\bin"
-echo "%PATH%"
+echo Path=%PATH%
 echo on
 "%SH_PATH%" "%~dp0dev.sh" %*
