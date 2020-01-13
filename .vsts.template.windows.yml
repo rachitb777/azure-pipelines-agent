@@ -16,9 +16,9 @@ steps:
 
 # Build agent layout
 - script: |
-    echo "##vso[task.prependpath]C:\Program Files\Git\mingw64\bin"
-    echo "##vso[task.prependpath]C:\Program Files\Git\usr\bin"
-    echo "##vso[task.prependpath]C:\Program Files\Git\bin"
+    @echo "##vso[task.prependpath]C:\Program Files\Git\mingw64\bin"
+    @echo "##vso[task.prependpath]C:\Program Files\Git\usr\bin"
+    @echo "##vso[task.prependpath]C:\Program Files\Git\bin"
     dev.cmd layout Release
   workingDirectory: src
   displayName: Build & Layout Release
@@ -26,9 +26,9 @@ steps:
 
 # Run test
 - script: |
-    echo "##vso[task.prependpath]C:\Program Files\Git\mingw64\bin"
-    echo "##vso[task.prependpath]C:\Program Files\Git\usr\bin"
-    echo "##vso[task.prependpath]C:\Program Files\Git\bin"
+    @echo "##vso[task.prependpath]C:\Program Files\Git\mingw64\bin"
+    @echo "##vso[task.prependpath]C:\Program Files\Git\usr\bin"
+    @echo "##vso[task.prependpath]C:\Program Files\Git\bin"
     dev.cmd test
   workingDirectory: src
   displayName: Test
