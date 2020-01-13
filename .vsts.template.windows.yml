@@ -15,21 +15,13 @@ steps:
   clean: true
 
 # Build agent layout
-- script: |
-    @echo "##vso[task.prependpath]C:\Program Files\Git\mingw64\bin"
-    @echo "##vso[task.prependpath]C:\Program Files\Git\usr\bin"
-    @echo "##vso[task.prependpath]C:\Program Files\Git\bin"
-    dev.cmd layout Release
+- script: dev.cmd layout Release
   workingDirectory: src
   displayName: Build & Layout Release
 
 
 # Run test
-- script: |
-    @echo "##vso[task.prependpath]C:\Program Files\Git\mingw64\bin"
-    @echo "##vso[task.prependpath]C:\Program Files\Git\usr\bin"
-    @echo "##vso[task.prependpath]C:\Program Files\Git\bin"
-    dev.cmd test
+- script: dev.cmd test
   workingDirectory: src
   displayName: Test
 
