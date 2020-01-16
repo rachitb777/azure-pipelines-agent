@@ -30,6 +30,9 @@ jobs:
       componentDetection: 'true'
       testLogTitle: 'Windows-x64'
 
+  - script: dotnet tool install --global dotnet-reportgenerator-globaltool
+    displayName: Install Report Generator
+
   - script: dev.cmd report
     displayName: Generate Code Coverage report
     workingDirectory: src
