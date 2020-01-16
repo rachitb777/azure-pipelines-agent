@@ -36,7 +36,7 @@ jobs:
 
   - task: PublishCodeCoverageResults@1
     inputs:
-      summaryFileLocation: _reports/**/coverage.xml
+      summaryFileLocation: _reports/**/Cobertura.xml
       pathToSources: src
 
   # Package .NET Core Windows dependency (VC++ Redistributable)
