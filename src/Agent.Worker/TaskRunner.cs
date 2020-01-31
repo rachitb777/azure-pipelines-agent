@@ -127,15 +127,25 @@ namespace Microsoft.VisualStudio.Services.Agent.Worker
 
                 var targetOS = PlatformUtil.HostOS;
                 var stepTarget = ExecutionContext.StepTarget();
+                var preferPowershellHandler = true;
                 if (stepTarget != null)
                 {
                     targetOS = stepTarget.ExecutionOS;
+                    if (stepTarget is ContainerInfo)
+                    {
+                        if ((currentExecution?.All.Any(x => x is PowerShell3HandlerData)).Value &&
+                            (currentExecution?.All.Any(x => x is NodeHandlerData || x is Node10HandlerData)).Value)
+                            {
+                                Trace.Info($"Since we are targeting a container, we will prefer a node handler if one is available");
+                                preferPowershellHandler = false;
+                            }
+                    }
                 }
                 Trace.Info($"Get handler data for target platform {targetOS.ToString()}");
 
                 HandlerData handlerData =
                     currentExecution?.All
-                    .OrderBy(x => !x.PreferredOnPlatform(targetOS)) // Sort true to false.
+                    .OrderBy(x => !(x.PreferredOnPlatform(targetOS) && (preferPowershellHandler || !(x is PowerShell3HandlerData)))) // Sort true to false.
                     .ThenBy(x => x.Priority)
                     .FirstOrDefault();
                 if (handlerData == null)
@@ -147,7 +157,7 @@ namespace Microsoft.VisualStudio.Services.Agent.Worker
 
                     throw new Exception(StringUtil.Loc("SupportedTaskHandlerNotFoundLinux"));
                 }
-
+                Trace.Info($"Handler data is of type {handlerData}");
 
                 Variables runtimeVariables = ExecutionContext.Variables;
                 IStepHost stepHost = HostContext.CreateService<IDefaultStepHost>();
