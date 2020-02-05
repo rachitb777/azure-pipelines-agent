@@ -155,8 +155,8 @@ namespace Microsoft.VisualStudio.Services.Agent.Worker.Handlers
 
         public string GetNodeLocation()
         {
-            bool useNode10 = ExecutionContext.Variables.GetBoolean("AGENT_USE_NODE10")
-                ?? StringUtil.ConvertToBoolean(System.Environment.GetEnvironmentVariable("AGENT_USE_NODE10"), false);
+            bool useNode10 = AgentKnobs.UseNode10.GetValue(ExecutionContext).AsBoolean();
+
             bool taskHasNode10Data = Data is Node10HandlerData;
             string nodeFolder = (taskHasNode10Data || useNode10) ? "node10" : "node";
 

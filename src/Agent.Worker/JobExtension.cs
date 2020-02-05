@@ -118,6 +118,31 @@ namespace Microsoft.VisualStudio.Services.Agent.Worker
 
                         taskConditionMap[task.Id] = condition;
                     }
+                    foreach (var knob in AgentKnobs.GetAllKnobs())
+                    {
+                        var value = knob.GetValue(jobContext);
+                        if (value.Source != KnobSource.BuiltinDefault)
+                        {
+                            var tag = "";
+                            if (knob.IsDeprecated)
+                            {
+                                tag = "(DEPRECATED)";
+                            }
+                            else if (knob.IsExperimental)
+                            {
+                                tag = "(EXPERIMENTAL)";
+                            }
+                            var outputLine = $"{knob.Name}={value.AsString()} {value.Source} {value.Which} {tag}";
+                            if (!string.IsNullOrEmpty(tag))
+                            {
+                                context.Warning(outputLine);
+                            }
+                            else
+                            {
+                                context.Output(outputLine);
+                            }
+                        }
+                    }
 
                     if (PlatformUtil.RunningOnWindows)
                     {
