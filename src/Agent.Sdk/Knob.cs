@@ -118,7 +118,7 @@ namespace Agent.Sdk
 
         public static ReadOnlyCollection<IKnob> GetAllKnobs()
         {
-            return _knobs.Values.AsReadOnly();
+            return new List<IKnob>(_knobs.Values).AsReadOnly();
         }
     }
 
