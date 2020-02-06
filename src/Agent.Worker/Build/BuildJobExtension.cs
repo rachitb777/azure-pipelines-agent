@@ -188,8 +188,8 @@ namespace Microsoft.VisualStudio.Services.Agent.Worker.Build
             // RepoClean may be set from the server, so start with the server value
             bool? repoClean = executionContext.Variables.GetBoolean(Constants.Variables.Build.RepoClean);
 
-            var checkoutTasks = steps.Where(x => x.IsCheckoutTask()).Select(x => x as TaskStep);
-            var hasOnlyOneCheckoutTask = checkoutTasks.Count() == 1;
+            var checkoutTasks = steps.Where(x => x.IsCheckoutTask()).Select(x => x as TaskStep).ToList();
+            var hasOnlyOneCheckoutTask = checkoutTasks.Count == 1;
             foreach (var checkoutTask in checkoutTasks)
             {
                 if (!checkoutTask.Inputs.TryGetValue(PipelineConstants.CheckoutTaskInputs.Repository, out string repositoryAlias))
