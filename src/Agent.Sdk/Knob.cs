@@ -10,7 +10,7 @@ namespace Agent.Sdk
 {
     public enum KnobSource
     {
-        BuiltinDefault,
+        BuiltInDefault,
         EnvironmentVariable,
         RuntimeVariable,
     };
@@ -20,6 +20,7 @@ namespace Agent.Sdk
         public KnobSource Source { get;  private set;}
         public string Which { get; private set; }
         private string _value;
+
         public KnobValue(string value, KnobSource source, string which=null)
         {
             _value = value;
@@ -40,21 +41,23 @@ namespace Agent.Sdk
 
     public class AgentKnobs : KnobPanel
     {
-        public static readonly IKnob UseNode10 = new Knob()
+        public static readonly IKnob UseNode10 = new Knob(nameof(UseNode10))
         {
-            Name="UseNode10",
-            EnvironmentVariableNames=new List<string>{ "AGENT_USE_NODE10" },
-            RuntimeVariableNames=new List<string>{ "AGENT_USE_NODE10" },
-            Description="Forces the agent to use Node 10 handler for all Node-based tasks",
-            DefaultValue="false"
+            EnvironmentVariableNames = new List<string>{ "AGENT_USE_NODE10" },
+            RuntimeVariableNames = new List<string>{ "AGENT_USE_NODE10" },
+            Description = "Forces the agent to use Node 10 handler for all Node-based tasks",
+            DefaultValue = "false"
         };
     }
 
     public class KnobPanel
     {
+
+        private static readonly IDictionary<string,IKnob> _knobs = new Dictionary<string,IKnob>();
+
         public class Knob : IKnob
         {
-            public string Name { get; set; }
+            public string Name { get; private set; }
             public List<string> EnvironmentVariableNames { get; set; }
             public List<string> RuntimeVariableNames { get; set; }
             // public TBDType CommandLineOption {get; private set;}
@@ -62,6 +65,16 @@ namespace Agent.Sdk
             public bool IsDeprecated {get; set; } = false;  // is going away at a future date
             public bool IsExperimental {get; set; } = false; // may go away at a future date
             public string DefaultValue {get; set; } = "";
+
+            public Knob(string name)
+            {
+                Name = name;
+                if (AgentKnobs._knobs.ContainsKey(name))
+                {
+                    throw new ArgumentException($"Already have a knob called {name}", nameof(name));
+                }
+                AgentKnobs._knobs[name] = this;
+            }
 
             public KnobValue GetValue(IKnobValueContext context)
             {
@@ -75,7 +88,7 @@ namespace Agent.Sdk
                 // 4. Default
                 if (context != null)
                 {
-                    if (RuntimeVariableNames != null)
+                    if (!(RuntimeVariableNames is null))
                     {
                         foreach (var runTimeVar in RuntimeVariableNames)
                         {
@@ -86,7 +99,7 @@ namespace Agent.Sdk
                             }
                         }
                     }
-                    if (EnvironmentVariableNames != null)
+                    if (!(EnvironmentVariableNames is null))
                     {
                         var scopedEnvironment = context.GetScopedEnvironment();
                         foreach (var envVar in EnvironmentVariableNames)
@@ -99,25 +112,13 @@ namespace Agent.Sdk
                         }
                     }
                 }
-                return new KnobValue(DefaultValue, KnobSource.BuiltinDefault);
+                return new KnobValue(DefaultValue, KnobSource.BuiltInDefault);
             }
         }
 
         public static ReadOnlyCollection<IKnob> GetAllKnobs()
         {
-            List<IKnob> allKnobs = new List<IKnob>();
-            Type type = typeof(IKnob);
-            foreach (var info in type.GetFields(BindingFlags.Public | BindingFlags.Static | BindingFlags.DeclaredOnly))
-            {
-                var instance = new Knob();
-                var locatedValue = info.GetValue(instance) as IKnob;
-
-                if (locatedValue != null)
-                {
-                    allKnobs.Add(locatedValue);
-                }
-            }
-            return allKnobs.AsReadOnly();
+            return _knobs.Values.AsReadOnly();
         }
     }
 

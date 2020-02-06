@@ -121,7 +121,7 @@ namespace Microsoft.VisualStudio.Services.Agent.Worker
                     foreach (var knob in AgentKnobs.GetAllKnobs())
                     {
                         var value = knob.GetValue(jobContext);
-                        if (value.Source != KnobSource.BuiltinDefault)
+                        if (value.Source != KnobSource.BuiltInDefault)
                         {
                             var tag = "";
                             if (knob.IsDeprecated)
