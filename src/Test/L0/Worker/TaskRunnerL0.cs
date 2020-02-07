@@ -18,28 +18,6 @@ namespace Microsoft.VisualStudio.Services.Agent.Tests.Worker
     public sealed class TaskRunnerL0
     {
 
-        public class TestHostInfo : ExecutionTargetInfo
-        {
-            public PlatformUtil.OS ExecutionOS {get; set; }
-
-            public string CustomNodePath { get; set; }
-
-            public string TranslateToContainerPath(string path)
-            {
-                return path;
-            }
-
-            public string TranslateToHostPath(string path)
-            {
-                return path;
-            }
-
-            public string TranslateContainerPathForImageOS(PlatformUtil.OS runningOs, string path)
-            {
-                return path;
-            }
-        }
-
         private TestHostContext CreateTestContext([CallerMemberName] String testName = "")
         {
             var hc = new TestHostContext(this, testName);
@@ -57,10 +35,6 @@ namespace Microsoft.VisualStudio.Services.Agent.Tests.Worker
 
             public void RunTest(TestHostContext hc, Dictionary<string, VariableValue> variables=null)
             {
-                if (StepTarget == null)
-                {
-                    StepTarget = new TestHostInfo() { ExecutionOS = HostOS };
-                }
                 var _ec = new Mock<IExecutionContext>();
                 _ec.Setup(x => x.StepTarget()).Returns(StepTarget);
 
