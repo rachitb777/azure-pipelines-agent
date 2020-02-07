@@ -74,8 +74,9 @@ namespace Microsoft.VisualStudio.Services.Agent.Tests.Worker
             var ps3OnlyExecutionData = new ExecutionData();
             ps3OnlyExecutionData.PowerShell3 = powerShell3Data;
             var mixedExecutionData = new ExecutionData();
-            mixedExecutionData.Node = nodeData;
             mixedExecutionData.PowerShell3 = powerShell3Data;
+            mixedExecutionData.Node = nodeData;
+
 
             foreach (var test in new GetHandlerTest[] {
                 new GetHandlerTest() { Name="Empty Test",                  Input=null,                  Expected=null,            HostOS=PlatformUtil.OS.Windows },
