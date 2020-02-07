@@ -207,6 +207,9 @@ namespace Microsoft.VisualStudio.Services.Agent.Worker.Build
 
                 Trace.Info($"Checking repository name {repositoryAlias}");
                 // If this is the primary repository, use it to get the variable values
+                // A repository is considered the primary one if the name is 'self' or if there is only
+                // one checkout task. This is because Designer builds set the name of the repository something
+                // other than 'self'
                 if (hasOnlyOneCheckoutTask || RepositoryUtil.IsPrimaryRepositoryName(repositoryAlias))
                 {
                     submoduleCheckout = checkoutTask.Inputs.ContainsKey(PipelineConstants.CheckoutTaskInputs.Submodules);
