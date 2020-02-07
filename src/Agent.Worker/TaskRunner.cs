@@ -77,13 +77,13 @@ namespace Microsoft.VisualStudio.Services.Agent.Worker
                 // Verify task signatures if a fingerprint is configured for the Agent.
                 var configurationStore = HostContext.GetService<IConfigurationStore>();
                 AgentSettings settings = configurationStore.GetSettings();
-                
+
                 if (!String.IsNullOrEmpty(settings.Fingerprint))
                 {
                     ISignatureService signatureService = HostContext.CreateService<ISignatureService>();
                     Boolean verificationSuccessful =  await signatureService.VerifyAsync(definition, ExecutionContext.CancellationToken);
 
-                    if (verificationSuccessful) 
+                    if (verificationSuccessful)
                     {
                         ExecutionContext.Output("Task signature verification successful.");
 
@@ -93,7 +93,7 @@ namespace Microsoft.VisualStudio.Services.Agent.Worker
                             taskManager.Extract(ExecutionContext, Task);
                         }
                     }
-                    else 
+                    else
                     {
                         throw new Exception("Task signature verification failed.");
                     }
@@ -117,7 +117,7 @@ namespace Microsoft.VisualStudio.Services.Agent.Worker
                 };
 
                 HandlerData handlerData = GetHandlerData(ExecutionContext, currentExecution, PlatformUtil.HostOS);
-                    
+
                 if (handlerData == null)
                 {
                     if (PlatformUtil.RunningOnWindows)
@@ -362,7 +362,7 @@ namespace Microsoft.VisualStudio.Services.Agent.Worker
             {
                 // When task contains both PS and PS3 implementations, we will always prefer PS3 over PS regardless of the platform pinning.
                 Trace.Info("Ignore platform pinning for legacy PowerShell execution handler.");
-                var legacyPShandler = currentExecution?.All.Where(x => x is PowerShellHandlerData).FirstOrDefault();
+                var legacyPShandler = currentExecution.All.Where(x => x is PowerShellHandlerData).FirstOrDefault();
                 legacyPShandler.Platforms = null;
             }
 
