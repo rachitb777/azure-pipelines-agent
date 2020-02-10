@@ -70,16 +70,18 @@ namespace Microsoft.VisualStudio.Services.Agent
         private IDisposable _diagListenerSubscription;
         private StartupType _startupType;
         private string _perfFile;
+        private bool _testMode;
 
         public event EventHandler Unloading;
         public CancellationToken AgentShutdownToken => _agentShutdownTokenSource.Token;
         public ShutdownReason AgentShutdownReason { get; private set; }
         public ISecretMasker SecretMasker => _secretMasker;
         public ProductInfoHeaderValue UserAgent => _userAgent;
-        public HostContext(string hostType, string logFile = null)
+        public HostContext(string hostType, string logFile = null, bool testMode = false)
         {
             // Validate args.
             ArgUtil.NotNullOrEmpty(hostType, nameof(hostType));
+            _testMode = testMode;
 
             _loadContext = AssemblyLoadContext.GetLoadContext(typeof(HostContext).GetTypeInfo().Assembly);
             _loadContext.Unloading += LoadContext_Unloading;
@@ -343,6 +345,16 @@ namespace Microsoft.VisualStudio.Services.Agent
         public async Task Delay(TimeSpan delay, CancellationToken cancellationToken)
         {
             await Task.Delay(delay, cancellationToken);
+        }
+
+        public void SetupService<T>(Type target) where T : class, IAgentService {
+            if (!_testMode) {
+                throw new NotSupportedException("SetupService only supported while the HostContext is in L1 test mode");
+            }
+            if (!typeof(T).IsAssignableFrom(target)) {
+                throw new ArgumentException("The target type must implement the specified interface");
+            }
+            _serviceTypes.TryAdd(typeof(T), target);
         }
 
         /// <summary>

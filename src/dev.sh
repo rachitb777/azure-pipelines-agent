@@ -105,6 +105,17 @@ function cmd_test ()
     dotnet msbuild -t:test -p:PackageRuntime="${RUNTIME_ID}" -p:BUILDCONFIG="${BUILD_CONFIG}" -p:AgentVersion="${AGENT_VERSION}" -p:LayoutRoot="${LAYOUT_DIR}" -p:SkipOn="${CURRENT_PLATFORM}" || failed "failed tests"
 }
 
+function cmd_test_l1 ()
+{
+    heading "Testing L1"
+
+    if [[ ("$CURRENT_PLATFORM" == "linux") || ("$CURRENT_PLATFORM" == "darwin") ]]; then
+        ulimit -n 1024
+    fi
+
+    dotnet msbuild -t:testl1 -p:PackageRuntime="${RUNTIME_ID}" -p:BUILDCONFIG="${BUILD_CONFIG}" -p:AgentVersion="${AGENT_VERSION}" -p:LayoutRoot="${LAYOUT_DIR}" -p:SkipOn="${CURRENT_PLATFORM}" || failed "failed tests"
+}
+
 function cmd_package ()
 {
     if [ ! -d "${LAYOUT_DIR}/bin" ]; then
@@ -272,6 +283,7 @@ case $DEV_CMD in
    "b") cmd_build;;
    "test") cmd_test;;
    "t") cmd_test;;
+   "testl1") cmd_test_l1;;
    "layout") cmd_layout;;
    "l") cmd_layout;;
    "package") cmd_package;;
