@@ -7,6 +7,8 @@ const httpm = require('typed-rest-client/HttpClient');
 const INTEGRATION_DIR = path.join(__dirname, '..', '_layout', 'integrations');
 const GIT = 'git';
 const VALID_RELEASE_RE = /^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$/;
+const GIT_RELEASE_RE = /([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3})/;
+
 const GIT_HUB_API_URL_ROOT="https://api.github.com/repos/microsoft/azure-pipelines-agent";
 
 var httpc = new httpm.HttpClient('vsts-node-api');
@@ -26,6 +28,70 @@ var opt = require('node-getopt').create([
   .bindHelp()     // bind option 'help' to default action
   .parseSystem(); // parse command line
 
+
+function verifyMinimumGitVersion()
+{
+    var gitVersionOutput = cp.execSync(GIT + ' --version', { encoding: 'utf-8'});
+    if (gitVersionOutput == "")
+    {
+        console.log("Unable to get Git Version. Got: " + gitVersionOutput);
+        process.exit(-1);
+    }
+    var gitVersion = gitVersionOutput.match(GIT_RELEASE_RE)[0];
+
+    var minimumGitVersion = "2.25.0";
+    if (compareVersions(gitVersion, minimumGitVersion) < 0)
+    {
+        console.log("Version of Git does not meet minimum requirement of " + minimumGitVersion);
+        process.exit(-1);
+    }
+    console.log("Using git version " + gitVersion);
+
+}
+
+//taken from: https://stackoverflow.com/questions/6832596/how-to-compare-software-version-number-using-js-only-number
+function compareVersions(a, b)
+{
+    if (a === b)
+    {
+       return 0;
+    }
+
+    var a_components = a.split(".");
+    var b_components = b.split(".");
+
+    var len = Math.min(a_components.length, b_components.length);
+
+    // loop while the components are equal
+    for (var i = 0; i < len; i++)
+    {
+        // A bigger than B
+        if (parseInt(a_components[i]) > parseInt(b_components[i]))
+        {
+            return 1;
+        }
+
+        // B bigger than A
+        if (parseInt(a_components[i]) < parseInt(b_components[i]))
+        {
+            return -1;
+        }
+    }
+
+    // If one's a prefix of the other, the longer one is greater.
+    if (a_components.length > b_components.length)
+    {
+        return 1;
+    }
+
+    if (a_components.length < b_components.length)
+    {
+        return -1;
+    }
+
+    // Otherwise they are the same.
+    return 0;
+}
 
 async function verifyNewReleaseTagOk(newRelease)
 {
@@ -297,6 +363,7 @@ async function main()
         console.log('Error: You must supply a version');
         process.exit(-1);
     }
+    verifyMinimumGitVersion();
     await verifyNewReleaseTagOk(newRelease);
     checkGitStatus();
     writeAgentVersionFile(newRelease);
