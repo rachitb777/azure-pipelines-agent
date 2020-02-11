@@ -28,6 +28,17 @@ var opt = require('node-getopt').create([
   .bindHelp()     // bind option 'help' to default action
   .parseSystem(); // parse command line
 
+function verifyMinimumNodeVersion()
+{
+    var version = process.version;
+    var minimumNodeVersion = "12.10.0"; // this is the version of node that supports the recursive option to rmdir
+    if (parseFloat(version.substr(1,version.length)) < parseFloat(minimumNodeVersion))
+    {
+        console.log("Version of Node does not meet minimum requirement of " + minimumNodeVersion);
+        process.exit(-1);
+    }
+    console.log("Using node version " + version);
+}
 
 function verifyMinimumGitVersion()
 {
@@ -39,7 +50,7 @@ function verifyMinimumGitVersion()
     }
     var gitVersion = gitVersionOutput.match(GIT_RELEASE_RE)[0];
 
-    var minimumGitVersion = "2.25.0";
+    var minimumGitVersion = "2.25.0"; // this is the version that supports sparse-checkout
     if (compareVersions(gitVersion, minimumGitVersion) < 0)
     {
         console.log("Version of Git does not meet minimum requirement of " + minimumGitVersion);
@@ -261,26 +272,31 @@ function commitAgentChanges(directory, release)
     console.log("");
 }
 
-function cloneOrPull(directory, url)
+function sparseClone(directory, url)
 {
     if (fs.existsSync(directory))
     {
-        execInForeground(GIT + " checkout master", directory);
-        execInForeground(GIT + " pull --depth 1", directory);
+        console.log("Removing previous clone of " + directory);
+        if (!opt.options.dryrun)
+        {
+            fs.rmdirSync(directory, { recursive: true });
+        }
     }
-    else
-    {
-        execInForeground(GIT + " clone --depth 1 " + url + " " + directory);
-    }
+
+    execInForeground(GIT + " clone --no-checkout --depth 1 " + url + " " + directory);
+    execInForeground(GIT + " sparse-checkout init --cone", directory);
 }
 
 function commitADOL2Changes(directory, release)
 {
     var gitUrl =  "https://mseng@dev.azure.com/mseng/AzureDevOps/_git/AzureDevOps"
 
-    cloneOrPull(directory, gitUrl);
+    sparseClone(directory, gitUrl);
     var file = path.join(INTEGRATION_DIR, 'InstallAgentPackage.xml');
-    var target = path.join(directory, 'DistributedTask', 'Service', 'Servicing', 'Host', 'Deployment', 'Groups', 'InstallAgentPackage.xml');
+    var targetDirectory = path.join('DistributedTask', 'Service', 'Servicing', 'Host', 'Deployment', 'Groups');
+    execInForeground(GIT + " sparse-checkout set " + targetDirectory, directory);
+    var target = path.join(directory, targetDirectory, 'InstallAgentPackage.xml');
+
     if (opt.options.dryrun)
     {
         console.log("Copy file from " + file + " to " + target );
@@ -290,7 +306,7 @@ function commitADOL2Changes(directory, release)
         fs.copyFileSync(file, target);
     }
     var newBranch = "users/" + process.env.USER + "/agent-" + release;
-    execInForeground(GIT + " add DistributedTask", directory);
+    execInForeground(GIT + " add " + targetDirectory, directory);
     commitAndPush(directory, release, newBranch);
 
     console.log("Create pull-request for this change ");
@@ -302,7 +318,8 @@ function commitADOConfigChange(directory, release)
 {
     var gitUrl =  "https://mseng@dev.azure.com/mseng/AzureDevOps/_git/AzureDevOps.ConfigChange"
 
-    cloneOrPull(directory, gitUrl);
+    sparseClone(directory, gitUrl);
+    execInForeground(GIT + " sparse-checkout set tfs", directory);
     var agentVersionPath=release.replace(/\./g, '-');
     var milestoneDir = "mXXX";
     var tfsDir = path.join(directory, "tfs");
@@ -363,6 +380,7 @@ async function main()
         console.log('Error: You must supply a version');
         process.exit(-1);
     }
+    verifyMinimumNodeVersion();
     verifyMinimumGitVersion();
     await verifyNewReleaseTagOk(newRelease);
     checkGitStatus();
