@@ -1,19 +1,18 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
-using System.Collections.Generic;
 using Microsoft.TeamFoundation.DistributedTask.WebApi;
 using Microsoft.VisualStudio.Services.Agent.Util;
 using System;
-using Microsoft.VisualStudio.Services.WebApi;
 using System.Linq;
-using System.Reflection;
+using System.Collections.Generic;
+using Microsoft.VisualStudio.Services.WebApi;
 using Pipelines = Microsoft.TeamFoundation.DistributedTask.Pipelines;
 using Microsoft.VisualStudio.Services.Agent.Worker;
+using Microsoft.VisualStudio.Services.Agent.Worker.Handlers;
 
 namespace Microsoft.VisualStudio.Services.Agent.Tests.L1.Worker
 {
@@ -29,26 +28,55 @@ namespace Microsoft.VisualStudio.Services.Agent.Tests.L1.Worker
 
         private TimeSpan _channelTimeout = TimeSpan.FromSeconds(Math.Min(Math.Max(100, 30), 300));
 
+        private FakeJobServer _jobServer;
+
         [Fact]
         [Trait("Level", "L1")]
         [Trait("Category", "Worker")]
         public async Task Test()
         {
+            var message = JsonUtility.FromString<Pipelines.AgentJobRequestMessage>(testBlob);
+            var results = await RunWorker(message);
+
+            Assert.Equal(TaskResult.Succeeded, results.Result);
+            var timeline = GetTimelines()[0];
+            var steps = timeline.Records.Where(x => x.RecordType == "Task");
+            Assert.Equal(3, steps.Count());
+            Assert.Equal(1, steps.Where(x => x.Name == "CmdLine").Count());
+        }
+
+        protected List<Timeline> GetTimelines()
+        {
+            return _jobServer.Timelines.Values.ToList();
+        }
+
+        protected async Task<TestResults> RunWorker(Pipelines.AgentJobRequestMessage message)
+        {
             using (HostContext context = new HostContext("Agent", testMode: true))
             {
                 SetupMocks(context);
 
-                var message = JsonUtility.FromString<Pipelines.AgentJobRequestMessage>(testBlob);
+                await SetupMessage(context, message);
+
                 CancellationTokenSource cts = new CancellationTokenSource();
                 cts.CancelAfter(120000);
-                var result = await RunWorker(context, message, cts.Token);
+                return await RunWorker(context, message, cts.Token);
             }
         }
 
         private void SetupMocks(HostContext context) {
             context.SetupService<IConfigurationStore>(typeof(FakeConfigurationStore));
             context.SetupService<IJobServer>(typeof(FakeJobServer));
+            _jobServer = (FakeJobServer) context.GetService<IJobServer>();
             context.SetupService<ITaskServer>(typeof(FakeTaskServer));
+            context.SetupService<ITaskManager>(typeof(FakeTaskManager));
+            context.SetupService<IHandlerFactory>(typeof(FakeHandlerFactory));
+        }
+
+        private async Task SetupMessage(HostContext context, Pipelines.AgentJobRequestMessage message)
+        {
+            var jobServer = context.GetService<IJobServer>();
+            await jobServer.CreateTimelineAsync(message.Plan.ScopeIdentifier, message.Plan.PlanType, message.Plan.PlanId, message.Timeline.Id, default);
         }
 
         private async Task<TestResults> RunWorker(HostContext HostContext, Pipelines.AgentJobRequestMessage message, CancellationToken jobRequestCancellationToken)
@@ -64,9 +92,6 @@ namespace Microsoft.VisualStudio.Services.Agent.Tests.L1.Worker
                         pipeOut: pipeHandleIn);
                 }, disposeClient: false);
 
-                // Send the job request message.
-                // Kill the worker process if sending the job message times out. The worker
-                // process may have successfully received the job message.
                 try
                 {
                     var body = JsonUtility.ToString(message);
@@ -81,17 +106,15 @@ namespace Microsoft.VisualStudio.Services.Agent.Tests.L1.Worker
                 catch (Exception e)
                 {
                     Console.WriteLine(e.ToString());
-                    // not finish the job request since the job haven't run on worker at all, we will not going to set a result to server.
                     return null;
                 }
 
                 try
                 {
-                    // wait for renewlock, worker process or cancellation token been fired.
+                    // wait for worker process or cancellation token been fired.
                     var completedTask = await Task.WhenAny(workerTask, Task.Delay(-1, jobRequestCancellationToken));
                     if (completedTask == workerTask)
                     {
-                        // worker finished successfully, complete job request with result, attach unhandled exception reported by worker, stop renew lock, job has finished.
                         int returnCode = await workerTask;
 
                         string detailInfo = null;

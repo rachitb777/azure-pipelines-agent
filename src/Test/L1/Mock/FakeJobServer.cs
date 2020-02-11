@@ -1,16 +1,11 @@
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using Xunit;
 using System.Collections.Generic;
 using Microsoft.TeamFoundation.DistributedTask.WebApi;
-using Microsoft.VisualStudio.Services.Agent.Util;
 using System;
 using Microsoft.VisualStudio.Services.WebApi;
 using System.Linq;
-using System.Reflection;
-using Pipelines = Microsoft.TeamFoundation.DistributedTask.Pipelines;
-using Microsoft.VisualStudio.Services.Agent.Worker;
 
 namespace Microsoft.VisualStudio.Services.Agent.Tests.L1.Worker
 {
@@ -18,11 +13,17 @@ namespace Microsoft.VisualStudio.Services.Agent.Tests.L1.Worker
     {
         public List<JobEvent> RecordedEvents { get; }
 
+        public Dictionary<int, TaskLog> Logs { get; }
         public Dictionary<Guid, Timeline> Timelines { get; }
+
+        public List<string> AttachmentsCreated { get; }
 
         public FakeJobServer()
         {
             RecordedEvents = new List<JobEvent>();
+            Timelines = new Dictionary<Guid, Timeline>();
+            Logs = new Dictionary<int, TaskLog>();
+            AttachmentsCreated = new List<string>();
         }
 
         public void Initialize(IHostContext hostContext)
@@ -35,7 +36,12 @@ namespace Microsoft.VisualStudio.Services.Agent.Tests.L1.Worker
 
         public Task<TaskLog> AppendLogContentAsync(Guid scopeIdentifier, string hubName, Guid planId, int logId, Stream uploadStream, CancellationToken cancellationToken)
         {
-            return null;
+            StreamReader reader = new StreamReader(uploadStream);
+            string text = reader.ReadToEnd();
+
+            var taskLog = Logs.GetValueOrDefault(logId);
+            taskLog.Path = text;
+            return Task.FromResult(taskLog);
         }
         public Task AppendTimelineRecordFeedAsync(Guid scopeIdentifier, string hubName, Guid planId, Guid timelineId, Guid timelineRecordId, Guid stepId, IList<string> lines, long startLine, CancellationToken cancellationToken)
         {
@@ -43,11 +49,13 @@ namespace Microsoft.VisualStudio.Services.Agent.Tests.L1.Worker
         }
         public Task<TaskAttachment> CreateAttachmentAsync(Guid scopeIdentifier, string hubName, Guid planId, Guid timelineId, Guid timelineRecordId, String type, String name, Stream uploadStream, CancellationToken cancellationToken)
         {
-            return null;
+            AttachmentsCreated.Add(name);
+            return Task.FromResult(new TaskAttachment(type, name));
         }
         public Task<TaskLog> CreateLogAsync(Guid scopeIdentifier, string hubName, Guid planId, TaskLog log, CancellationToken cancellationToken)
         {
-            log.Id = 1;
+            log.Id = Logs.Count + 1;
+            Logs.Add(log.Id, log);
             return Task.FromResult(log);
         }
         public Task<Timeline> CreateTimelineAsync(Guid scopeIdentifier, string hubName, Guid planId, Guid timelineId, CancellationToken cancellationToken)
