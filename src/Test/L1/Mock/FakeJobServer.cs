@@ -69,9 +69,16 @@ namespace Microsoft.VisualStudio.Services.Agent.Tests.L1.Worker
         public Task<List<TimelineRecord>> UpdateTimelineRecordsAsync(Guid scopeIdentifier, string hubName, Guid planId, Guid timelineId, IEnumerable<TimelineRecord> records, CancellationToken cancellationToken)
         {
             var recordDictionary = records.ToDictionary(x => x.Id);
-            Timeline timeline = Timelines[timelineId];
-            timeline.Records.RemoveAll(x => recordDictionary.Keys.Contains(x.Id));
-            timeline.Records.AddRange(records);
+            Timeline timeline = Timelines.GetValueOrDefault(timelineId);
+            foreach (var record in timeline.Records)
+            {
+                if (recordDictionary.ContainsKey(record.Id))
+                {
+                    MergeTimelineRecords(record, recordDictionary.GetValueOrDefault(record.Id));
+                    recordDictionary.Remove(record.Id);
+                }
+            }
+            timeline.Records.AddRange(recordDictionary.Values);
             return Task.FromResult(records.ToList());
         }
         public Task RaisePlanEventAsync<T>(Guid scopeIdentifier, string hubName, Guid planId, T eventData, CancellationToken cancellationToken) where T : JobEvent
@@ -82,6 +89,47 @@ namespace Microsoft.VisualStudio.Services.Agent.Tests.L1.Worker
         public Task<Timeline> GetTimelineAsync(Guid scopeIdentifier, string hubName, Guid planId, Guid timelineId, CancellationToken cancellationToken)
         {
             return Task.FromResult(Timelines[timelineId]);
+        }
+
+        private void MergeTimelineRecords(TimelineRecord timelineRecord, TimelineRecord rec)
+        {
+            timelineRecord.CurrentOperation = rec.CurrentOperation ?? timelineRecord.CurrentOperation;
+            timelineRecord.Details = rec.Details ?? timelineRecord.Details;
+            timelineRecord.FinishTime = rec.FinishTime ?? timelineRecord.FinishTime;
+            timelineRecord.Log = rec.Log ?? timelineRecord.Log;
+            timelineRecord.Name = rec.Name ?? timelineRecord.Name;
+            timelineRecord.RefName = rec.RefName ?? timelineRecord.RefName;
+            timelineRecord.PercentComplete = rec.PercentComplete ?? timelineRecord.PercentComplete;
+            timelineRecord.RecordType = rec.RecordType ?? timelineRecord.RecordType;
+            timelineRecord.Result = rec.Result ?? timelineRecord.Result;
+            timelineRecord.ResultCode = rec.ResultCode ?? timelineRecord.ResultCode;
+            timelineRecord.StartTime = rec.StartTime ?? timelineRecord.StartTime;
+            timelineRecord.State = rec.State ?? timelineRecord.State;
+            timelineRecord.WorkerName = rec.WorkerName ?? timelineRecord.WorkerName;
+
+            if (rec.ErrorCount != null && rec.ErrorCount > 0)
+            {
+                timelineRecord.ErrorCount = rec.ErrorCount;
+            }
+
+            if (rec.WarningCount != null && rec.WarningCount > 0)
+            {
+                timelineRecord.WarningCount = rec.WarningCount;
+            }
+
+            if (rec.Issues.Count > 0)
+            {
+                timelineRecord.Issues.Clear();
+                timelineRecord.Issues.AddRange(rec.Issues.Select(i => i.Clone()));
+            }
+
+            if (rec.Variables.Count > 0)
+            {
+                foreach (var variable in rec.Variables)
+                {
+                    timelineRecord.Variables[variable.Key] = variable.Value.Clone();
+                }
+            }
         }
     }
 }
