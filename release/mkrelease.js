@@ -51,57 +51,13 @@ function verifyMinimumGitVersion()
     var gitVersion = gitVersionOutput.match(GIT_RELEASE_RE)[0];
 
     var minimumGitVersion = "2.25.0"; // this is the version that supports sparse-checkout
-    if (compareVersions(gitVersion, minimumGitVersion) < 0)
+    if (parseFloat(gitVersion) < parseFloat(minimumGitVersion))
     {
         console.log("Version of Git does not meet minimum requirement of " + minimumGitVersion);
         process.exit(-1);
     }
     console.log("Using git version " + gitVersion);
 
-}
-
-//taken from: https://stackoverflow.com/questions/6832596/how-to-compare-software-version-number-using-js-only-number
-function compareVersions(a, b)
-{
-    if (a === b)
-    {
-       return 0;
-    }
-
-    var a_components = a.split(".");
-    var b_components = b.split(".");
-
-    var len = Math.min(a_components.length, b_components.length);
-
-    // loop while the components are equal
-    for (var i = 0; i < len; i++)
-    {
-        // A bigger than B
-        if (parseInt(a_components[i]) > parseInt(b_components[i]))
-        {
-            return 1;
-        }
-
-        // B bigger than A
-        if (parseInt(a_components[i]) < parseInt(b_components[i]))
-        {
-            return -1;
-        }
-    }
-
-    // If one's a prefix of the other, the longer one is greater.
-    if (a_components.length > b_components.length)
-    {
-        return 1;
-    }
-
-    if (a_components.length < b_components.length)
-    {
-        return -1;
-    }
-
-    // Otherwise they are the same.
-    return 0;
 }
 
 async function verifyNewReleaseTagOk(newRelease)
