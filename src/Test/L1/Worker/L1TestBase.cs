@@ -44,7 +44,7 @@ namespace Microsoft.VisualStudio.Services.Agent.Tests.L1.Worker
 
         protected Pipelines.AgentJobRequestMessage LoadTemplateMessage()
         {
-            return JsonUtility.FromString<Pipelines.AgentJobRequestMessage>(JOB_MESSAGE_TEMPLATE);
+            return JsonUtility.FromString<Pipelines.AgentJobRequestMessage>(JobMessageTemplate);
         }
 
         protected void AssertJobCompleted()
@@ -80,7 +80,7 @@ namespace Microsoft.VisualStudio.Services.Agent.Tests.L1.Worker
         {
             // The agent assumes the server creates this
             var jobServer = context.GetService<IJobServer>();
-            await jobServer.CreateTimelineAsync(message.Plan.ScopeIdentifier, message.Plan.PlanType, message.Plan.PlanId, message.Timeline.Id, default);
+            await jobServer.CreateTimelineAsync(message.Plan.ScopeIdentifier, message.Plan.PlanType, message.Plan.PlanId, message.Timeline.Id, default(CancellationToken));
         }
 
         private async Task<TestResults> RunWorker(HostContext HostContext, Pipelines.AgentJobRequestMessage message, CancellationToken jobRequestCancellationToken)
@@ -148,7 +148,7 @@ namespace Microsoft.VisualStudio.Services.Agent.Tests.L1.Worker
             return null;
         }
 
-        protected static String JOB_MESSAGE_TEMPLATE = @"
+        protected static readonly String JobMessageTemplate = @"
  {
   'mask': [
     {
