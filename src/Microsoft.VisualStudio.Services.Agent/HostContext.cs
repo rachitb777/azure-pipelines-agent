@@ -347,7 +347,7 @@ namespace Microsoft.VisualStudio.Services.Agent
             await Task.Delay(delay, cancellationToken);
         }
 
-        public void SetupService<T>(Type target) where T : class, IAgentService {
+        public T SetupService<T>(Type target) where T : class, IAgentService {
             if (!_testMode) {
                 throw new NotSupportedException("SetupService only supported while the HostContext is in L1 test mode");
             }
@@ -355,6 +355,7 @@ namespace Microsoft.VisualStudio.Services.Agent
                 throw new ArgumentException("The target type must implement the specified interface");
             }
             _serviceTypes.TryAdd(typeof(T), target);
+            return CreateService<T>();
         }
 
         /// <summary>

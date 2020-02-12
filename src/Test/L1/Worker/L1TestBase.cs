@@ -30,11 +30,11 @@ namespace Microsoft.VisualStudio.Services.Agent.Tests.L1.Worker
 
         private TimeSpan _channelTimeout = TimeSpan.FromSeconds(Math.Min(Math.Max(100, 30), 300));
 
-        private FakeJobServer _jobServer;
+        private List<IAgentService> _mockedServices;
 
         protected List<Timeline> GetTimelines()
         {
-            return _jobServer.Timelines.Values.ToList();
+            return GetMockedService<FakeJobServer>().Timelines.Values.ToList();
         }
 
         protected IEnumerable<TimelineRecord> GetSteps()
@@ -50,7 +50,12 @@ namespace Microsoft.VisualStudio.Services.Agent.Tests.L1.Worker
 
         protected void AssertJobCompleted()
         {
-            Assert.Equal(1, _jobServer.RecordedEvents.Where(x => x is JobCompletedEvent).Count());
+            Assert.Equal(1, GetMockedService<FakeJobServer>().RecordedEvents.Where(x => x is JobCompletedEvent).Count());
+        }
+
+        protected T GetMockedService<T>()
+        {
+            return _mockedServices.Where(x => x is T).Cast<T>().FirstOrDefault();
         }
 
         protected async Task<TestResults> RunWorker(Pipelines.AgentJobRequestMessage message)
@@ -69,12 +74,11 @@ namespace Microsoft.VisualStudio.Services.Agent.Tests.L1.Worker
 
         private void SetupMocks(HostContext context)
         {
-            context.SetupService<IConfigurationStore>(typeof(FakeConfigurationStore));
-            context.SetupService<IJobServer>(typeof(FakeJobServer));
-            _jobServer = (FakeJobServer) context.GetService<IJobServer>();
-            context.SetupService<ITaskServer>(typeof(FakeTaskServer));
-            context.SetupService<IBuildServer>(typeof(FakeBuildServer));
-            context.SetupService<IReleaseServer>(typeof(FakeReleaseServer));
+            _mockedServices.Add(context.SetupService<IConfigurationStore>(typeof(FakeConfigurationStore)));
+            _mockedServices.Add(context.SetupService<IJobServer>(typeof(FakeJobServer)));
+            _mockedServices.Add(context.SetupService<ITaskServer>(typeof(FakeTaskServer)));
+            _mockedServices.Add(context.SetupService<IBuildServer>(typeof(FakeBuildServer)));
+            _mockedServices.Add(context.SetupService<IReleaseServer>(typeof(FakeReleaseServer)));
         }
 
         private async Task SetupMessage(HostContext context, Pipelines.AgentJobRequestMessage message)
