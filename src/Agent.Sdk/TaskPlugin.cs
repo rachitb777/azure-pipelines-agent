@@ -59,6 +59,9 @@ namespace Agent.Sdk
         public ContainerInfo Container {get; set; }
         public Dictionary<string, string> JobSettings { get; set; }
 
+        public static string FailTaskCommand = "##vso[task.complete result=Failed;]";
+
+
         [JsonIgnore]
         public VssConnection VssConnection
         {
@@ -162,7 +165,7 @@ namespace Agent.Sdk
         public void Error(string message)
         {
             Output($"##vso[task.logissue type=error;]{Escape(message)}");
-            Output($"##vso[task.complete result=Failed;]");
+            Output(FailTaskCommand);
         }
 
         public void Debug(string message)
@@ -181,7 +184,7 @@ namespace Agent.Sdk
             Output($"##vso[telemetry.publish area={area};feature={feature}]{Escape(propertiesAsJson)}");
         }
 
-        public void PublishTelemetry(string area, string feature, TelemetryRecord record) 
+        public void PublishTelemetry(string area, string feature, TelemetryRecord record)
             => PublishTelemetry(area, feature, record.GetAssignedProperties());
 
         public void Output(string message)
