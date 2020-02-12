@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 using Microsoft.TeamFoundation.DistributedTask.WebApi;
 using Microsoft.VisualStudio.Services.Agent.Util;
 using System;
+using System.IO;
+using System.IO.Compression;
 using Xunit;
 using System.Linq;
 using System.Collections.Generic;
@@ -79,6 +81,30 @@ namespace Microsoft.VisualStudio.Services.Agent.Tests.L1.Worker
             _mockedServices.Add(context.SetupService<ITaskServer>(typeof(FakeTaskServer)));
             _mockedServices.Add(context.SetupService<IBuildServer>(typeof(FakeBuildServer)));
             _mockedServices.Add(context.SetupService<IReleaseServer>(typeof(FakeReleaseServer)));
+            LoadTasks();
+        }
+
+        private void LoadTasks()
+        {
+            String baseDirectory = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
+            String taskZipsPath = Path.Join(baseDirectory, "TaskZips");
+            String tasksPath = Path.Join(baseDirectory, "L1", "Tasks");
+            if (!Directory.Exists(tasksPath))
+            {
+                throw new Exception("No mock tasks provided");
+            }
+            if (!Directory.Exists(taskZipsPath))
+            {
+                Directory.CreateDirectory(taskZipsPath);
+            }
+            foreach (string d in Directory.GetDirectories(tasksPath))
+            {
+                String zip = Path.Join(taskZipsPath, Path.GetFileName(d) + ".zip");
+                if (!File.Exists(zip))
+                {
+                    ZipFile.CreateFromDirectory(d, zip);
+                }
+            }
         }
 
         private async Task SetupMessage(HostContext context, Pipelines.AgentJobRequestMessage message)
