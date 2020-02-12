@@ -18,7 +18,7 @@ namespace Microsoft.VisualStudio.Services.Agent.Tests
         [Trait("Category", "Common")]
         public void HasAgentKnobs()
         {
-            Assert.True(ControlPanel.GetAllKnobsFor<AgentKnobs>().Count > 0, "Has at least one knob");
+            Assert.True(Knob.GetAllKnobsFor<AgentKnobs>().Count > 0, "Has at least one knob");
         }
 
         [Fact]

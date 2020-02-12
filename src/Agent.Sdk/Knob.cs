@@ -41,26 +41,6 @@ namespace Agent.Sdk
 
     }
 
-    public class ControlPanel
-    {
-        public static List<Knob> GetAllKnobsFor<T>()
-        {
-            Type type = typeof(T);
-            List<Knob> allKnobs = new List<Knob>();
-            foreach (var info in type.GetFields(BindingFlags.Public | BindingFlags.Static | BindingFlags.DeclaredOnly))
-            {
-                var instance = new Knob();
-                var locatedValue = info.GetValue(instance) as Knob;
-
-                if (locatedValue != null)
-                {
-                    allKnobs.Add(locatedValue);
-                }
-            }
-            return allKnobs;
-        }
-    }
-
     public class DeprecatedKnob : Knob
     {
         public override bool IsDeprecated => true;
@@ -102,6 +82,23 @@ namespace Agent.Sdk
             ArgUtil.NotNull(Source, nameof(Source));
 
             return Source.GetValue(context);
+        }
+
+        public static List<Knob> GetAllKnobsFor<T>()
+        {
+            Type type = typeof(T);
+            List<Knob> allKnobs = new List<Knob>();
+            foreach (var info in type.GetFields(BindingFlags.Public | BindingFlags.Static | BindingFlags.DeclaredOnly))
+            {
+                var instance = new Knob();
+                var locatedValue = info.GetValue(instance) as Knob;
+
+                if (locatedValue != null)
+                {
+                    allKnobs.Add(locatedValue);
+                }
+            }
+            return allKnobs;
         }
     }
 

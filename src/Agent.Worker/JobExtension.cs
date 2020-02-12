@@ -119,7 +119,7 @@ namespace Microsoft.VisualStudio.Services.Agent.Worker
                         taskConditionMap[task.Id] = condition;
                     }
                     context.Output("Checking jobs knob settings.");
-                    foreach (var knob in ControlPanel.GetAllKnobsFor<AgentKnobs>())
+                    foreach (var knob in Knob.GetAllKnobsFor<AgentKnobs>())
                     {
                         var value = knob.GetValue(jobContext);
                         if (value.Source.GetType() != typeof(BuiltInDefaultKnobSource))
