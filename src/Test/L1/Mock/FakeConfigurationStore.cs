@@ -3,9 +3,9 @@ using System.Reflection;
 
 namespace Microsoft.VisualStudio.Services.Agent.Tests.L1.Worker
 {
-    public class FakeConfigurationStore : IConfigurationStore
+    public class FakeConfigurationStore : AgentService, IConfigurationStore
     {
-        public void Initialize(IHostContext hostContext)
+        public FakeConfigurationStore()
         {
             RootFolder = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
         }

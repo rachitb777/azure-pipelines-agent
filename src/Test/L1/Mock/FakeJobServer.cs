@@ -9,7 +9,7 @@ using System.Linq;
 
 namespace Microsoft.VisualStudio.Services.Agent.Tests.L1.Worker
 {
-    public class FakeJobServer : IJobServer
+    public class FakeJobServer : AgentService, IJobServer
     {
         public List<JobEvent> RecordedEvents { get; }
 
@@ -26,9 +26,6 @@ namespace Microsoft.VisualStudio.Services.Agent.Tests.L1.Worker
             AttachmentsCreated = new List<string>();
         }
 
-        public void Initialize(IHostContext hostContext)
-        {
-        }
         public Task ConnectAsync(VssConnection jobConnection)
         {
             return Task.CompletedTask;

@@ -12,7 +12,8 @@ using System.Collections.Generic;
 using Microsoft.VisualStudio.Services.WebApi;
 using Pipelines = Microsoft.TeamFoundation.DistributedTask.Pipelines;
 using Microsoft.VisualStudio.Services.Agent.Worker;
-using Microsoft.VisualStudio.Services.Agent.Worker.Handlers;
+using Microsoft.VisualStudio.Services.Agent.Worker.Build;
+using Microsoft.VisualStudio.Services.Agent.Worker.Release;
 
 namespace Microsoft.VisualStudio.Services.Agent.Tests.L1.Worker
 {
@@ -72,8 +73,8 @@ namespace Microsoft.VisualStudio.Services.Agent.Tests.L1.Worker
             context.SetupService<IJobServer>(typeof(FakeJobServer));
             _jobServer = (FakeJobServer) context.GetService<IJobServer>();
             context.SetupService<ITaskServer>(typeof(FakeTaskServer));
-            context.SetupService<ITaskManager>(typeof(FakeTaskManager));
-            context.SetupService<IHandlerFactory>(typeof(FakeHandlerFactory));
+            context.SetupService<IBuildServer>(typeof(FakeBuildServer));
+            context.SetupService<IReleaseServer>(typeof(FakeReleaseServer));
         }
 
         private async Task SetupMessage(HostContext context, Pipelines.AgentJobRequestMessage message)
