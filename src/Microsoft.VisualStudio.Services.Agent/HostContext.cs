@@ -347,11 +347,14 @@ namespace Microsoft.VisualStudio.Services.Agent
             await Task.Delay(delay, cancellationToken);
         }
 
-        public T SetupService<T>(Type target) where T : class, IAgentService {
-            if (!_testMode) {
-                throw new NotSupportedException("SetupService only supported while the HostContext is in L1 test mode");
+        public T SetupService<T>(Type target) where T : class, IAgentService
+        {
+            if (!_testMode)
+            {
+                throw new NotSupportedException("SetupService is only supported while the HostContext is in L1 test mode");
             }
-            if (!typeof(T).IsAssignableFrom(target)) {
+            if (!typeof(T).IsAssignableFrom(target))
+            {
                 throw new ArgumentException("The target type must implement the specified interface");
             }
             _serviceTypes.TryAdd(typeof(T), target);

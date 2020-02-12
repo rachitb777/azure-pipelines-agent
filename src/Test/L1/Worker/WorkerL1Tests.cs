@@ -1,18 +1,10 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-using System.Threading;
-using System.Threading.Tasks;
-using Xunit;
-using Microsoft.TeamFoundation.DistributedTask.WebApi;
-using Microsoft.VisualStudio.Services.Agent.Util;
-using System;
 using System.Linq;
-using System.Collections.Generic;
-using Microsoft.VisualStudio.Services.WebApi;
-using Pipelines = Microsoft.TeamFoundation.DistributedTask.Pipelines;
-using Microsoft.VisualStudio.Services.Agent.Worker;
-using Microsoft.VisualStudio.Services.Agent.Worker.Handlers;
+using System.Threading.Tasks;
+using Microsoft.TeamFoundation.DistributedTask.WebApi;
+using Xunit;
 
 namespace Microsoft.VisualStudio.Services.Agent.Tests.L1.Worker
 {

@@ -1,21 +1,22 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.IO.Compression;
+using System.Linq;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.TeamFoundation.DistributedTask.WebApi;
 using Microsoft.VisualStudio.Services.Agent.Util;
-using System;
-using System.IO;
-using System.IO.Compression;
-using Xunit;
-using System.Linq;
-using System.Collections.Generic;
 using Microsoft.VisualStudio.Services.WebApi;
 using Pipelines = Microsoft.TeamFoundation.DistributedTask.Pipelines;
 using Microsoft.VisualStudio.Services.Agent.Worker;
 using Microsoft.VisualStudio.Services.Agent.Worker.Build;
 using Microsoft.VisualStudio.Services.Agent.Worker.Release;
+using Xunit;
 
 namespace Microsoft.VisualStudio.Services.Agent.Tests.L1.Worker
 {
@@ -24,6 +25,7 @@ namespace Microsoft.VisualStudio.Services.Agent.Tests.L1.Worker
         public int ReturnCode { get; internal set; }
         public TaskResult Result { get; internal set; }
         public Exception CaughtException { get; internal set; }
+        public bool TimedOut { get; internal set; }
     }
 
     public class L1TestBase
@@ -47,7 +49,11 @@ namespace Microsoft.VisualStudio.Services.Agent.Tests.L1.Worker
 
         protected Pipelines.AgentJobRequestMessage LoadTemplateMessage()
         {
-            return JsonUtility.FromString<Pipelines.AgentJobRequestMessage>(JobMessageTemplate);
+            return LoadJobMessageFromJSON(JobMessageTemplate);
+        }
+        protected Pipelines.AgentJobRequestMessage LoadJobMessageFromJSON(string message)
+        {
+            return JsonUtility.FromString<Pipelines.AgentJobRequestMessage>(message);
         }
 
         protected void AssertJobCompleted()
@@ -62,13 +68,20 @@ namespace Microsoft.VisualStudio.Services.Agent.Tests.L1.Worker
 
         protected async Task<TestResults> RunWorker(Pipelines.AgentJobRequestMessage message)
         {
+            // Clear working directory
+            var path = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) + "/w";
+            if (File.Exists(path))
+            {
+                File.Delete(path);
+            }
+
             using (HostContext context = new HostContext("Agent", testMode: true))
             {
                 SetupMocks(context);
 
                 await SetupMessage(context, message);
 
-                CancellationTokenSource cts = new CancellationTokenSource();
+                var cts = new CancellationTokenSource();
                 cts.CancelAfter(120000);
                 return await RunWorker(context, message, cts.Token);
             }
@@ -86,9 +99,9 @@ namespace Microsoft.VisualStudio.Services.Agent.Tests.L1.Worker
 
         private void LoadTasks()
         {
-            String baseDirectory = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
-            String taskZipsPath = Path.Join(baseDirectory, "TaskZips");
-            String tasksPath = Path.Join(baseDirectory, "L1", "Tasks");
+            var baseDirectory = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
+            var taskZipsPath = Path.Join(baseDirectory, "TaskZips");
+            var tasksPath = Path.Join(baseDirectory, "L1", "Tasks");
             if (!Directory.Exists(tasksPath))
             {
                 throw new Exception("No mock tasks provided");
@@ -97,13 +110,14 @@ namespace Microsoft.VisualStudio.Services.Agent.Tests.L1.Worker
             {
                 Directory.CreateDirectory(taskZipsPath);
             }
-            foreach (string d in Directory.GetDirectories(tasksPath))
+            foreach (var d in Directory.GetDirectories(tasksPath))
             {
-                String zip = Path.Join(taskZipsPath, Path.GetFileName(d) + ".zip");
-                if (!File.Exists(zip))
+                var zip = Path.Join(taskZipsPath, Path.GetFileName(d) + ".zip");
+                if (File.Exists(zip))
                 {
-                    ZipFile.CreateFromDirectory(d, zip);
+                    File.Delete(zip);
                 }
+                ZipFile.CreateFromDirectory(d, zip);
             }
         }
 
@@ -122,7 +136,8 @@ namespace Microsoft.VisualStudio.Services.Agent.Tests.L1.Worker
             // Setup the anonymous pipes to use for communication with the worker.
             using (var processChannel = HostContext.CreateService<IProcessChannel>())
             {
-                processChannel.StartServer(startProcess: (string pipeHandleOut, string pipeHandleIn) => {
+                processChannel.StartServer(startProcess: (string pipeHandleOut, string pipeHandleIn) =>
+                {
                     // Run the worker
                     // Note: this happens on the same process as the test
                     workerTask = worker.RunAsync(
@@ -167,6 +182,13 @@ namespace Microsoft.VisualStudio.Services.Agent.Tests.L1.Worker
                             Result = result
                         };
                     }
+                    else
+                    {
+                        return new TestResults
+                        {
+                            TimedOut = true
+                        };
+                    }
                 }
                 catch (Exception e)
                 {
@@ -176,7 +198,6 @@ namespace Microsoft.VisualStudio.Services.Agent.Tests.L1.Worker
                     };
                 }
             }
-            return null;
         }
 
         protected static readonly String JobMessageTemplate = @"
@@ -184,11 +205,11 @@ namespace Microsoft.VisualStudio.Services.Agent.Tests.L1.Worker
   'mask': [
     {
       'type': 'regex',
-      'value': '***'
+      'value': 'accessTokenSecret'
     },
     {
       'type': 'regex',
-      'value': '***'
+      'value': 'accessTokenSecret'
     }
   ],
   'steps': [
