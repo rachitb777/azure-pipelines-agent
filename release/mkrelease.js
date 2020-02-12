@@ -94,15 +94,15 @@ function editReleaseNotesFile(body)
         item.labels.forEach(function (label) {
             if (category)
             {
-                if (label.name == "bug")
+                if (label.name === "bug")
                 {
                     category = "Bugs";
                 }
-                if (label.name == "enhancement")
+                if (label.name === "enhancement")
                 {
                     category = "Features";
                 }
-                if (label.name == "internal")
+                if (label.name === "internal")
                 {
                     category = null;
                 }
