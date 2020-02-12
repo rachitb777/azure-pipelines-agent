@@ -75,7 +75,7 @@ namespace Microsoft.VisualStudio.Services.Agent.Tests.L1.Worker
                 File.Delete(path);
             }
 
-            using (HostContext context = new HostContext("Agent", testMode: true))
+            using (L1HostContext context = new L1HostContext("Agent"))
             {
                 SetupMocks(context);
 
@@ -87,7 +87,7 @@ namespace Microsoft.VisualStudio.Services.Agent.Tests.L1.Worker
             }
         }
 
-        private void SetupMocks(HostContext context)
+        private void SetupMocks(L1HostContext context)
         {
             _mockedServices.Add(context.SetupService<IConfigurationStore>(typeof(FakeConfigurationStore)));
             _mockedServices.Add(context.SetupService<IJobServer>(typeof(FakeJobServer)));

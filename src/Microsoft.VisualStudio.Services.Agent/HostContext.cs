@@ -49,14 +49,14 @@ namespace Microsoft.VisualStudio.Services.Agent
         AutoStartup
     }
 
-    public sealed class HostContext : EventListener, IObserver<DiagnosticListener>, IObserver<KeyValuePair<string, object>>, IHostContext, IDisposable
+    public class HostContext : EventListener, IObserver<DiagnosticListener>, IObserver<KeyValuePair<string, object>>, IHostContext, IDisposable
     {
         private const int _defaultLogPageSize = 8;  //MB
         private static int _defaultLogRetentionDays = 30;
         private static int[] _vssHttpMethodEventIds = new int[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 24 };
         private static int[] _vssHttpCredentialEventIds = new int[] { 11, 13, 14, 15, 16, 17, 18, 20, 21, 22, 27, 29 };
         private readonly ConcurrentDictionary<Type, object> _serviceInstances = new ConcurrentDictionary<Type, object>();
-        private readonly ConcurrentDictionary<Type, Type> _serviceTypes = new ConcurrentDictionary<Type, Type>();
+        protected readonly ConcurrentDictionary<Type, Type> _serviceTypes = new ConcurrentDictionary<Type, Type>();
         private readonly ISecretMasker _secretMasker = new SecretMasker();
         private readonly ProductInfoHeaderValue _userAgent = new ProductInfoHeaderValue($"VstsAgentCore-{BuildConstants.AgentPackage.PackageName}", BuildConstants.AgentPackage.Version);
         private CancellationTokenSource _agentShutdownTokenSource = new CancellationTokenSource();
@@ -70,18 +70,15 @@ namespace Microsoft.VisualStudio.Services.Agent
         private IDisposable _diagListenerSubscription;
         private StartupType _startupType;
         private string _perfFile;
-        private bool _testMode;
-
         public event EventHandler Unloading;
         public CancellationToken AgentShutdownToken => _agentShutdownTokenSource.Token;
         public ShutdownReason AgentShutdownReason { get; private set; }
         public ISecretMasker SecretMasker => _secretMasker;
         public ProductInfoHeaderValue UserAgent => _userAgent;
-        public HostContext(string hostType, string logFile = null, bool testMode = false)
+        public HostContext(string hostType, string logFile = null)
         {
             // Validate args.
             ArgUtil.NotNullOrEmpty(hostType, nameof(hostType));
-            _testMode = testMode;
 
             _loadContext = AssemblyLoadContext.GetLoadContext(typeof(HostContext).GetTypeInfo().Assembly);
             _loadContext.Unloading += LoadContext_Unloading;
@@ -345,20 +342,6 @@ namespace Microsoft.VisualStudio.Services.Agent
         public async Task Delay(TimeSpan delay, CancellationToken cancellationToken)
         {
             await Task.Delay(delay, cancellationToken);
-        }
-
-        public T SetupService<T>(Type target) where T : class, IAgentService
-        {
-            if (!_testMode)
-            {
-                throw new NotSupportedException("SetupService is only supported while the HostContext is in L1 test mode");
-            }
-            if (!typeof(T).IsAssignableFrom(target))
-            {
-                throw new ArgumentException("The target type must implement the specified interface");
-            }
-            _serviceTypes.TryAdd(typeof(T), target);
-            return CreateService<T>();
         }
 
         /// <summary>
