@@ -34,8 +34,8 @@ function verifyMinimumNodeVersion()
     var minimumNodeVersion = "12.10.0"; // this is the version of node that supports the recursive option to rmdir
     if (parseFloat(version.substr(1,version.length)) < parseFloat(minimumNodeVersion))
     {
-        console.log("Version of Node does not meet minimum requirement of " + minimumNodeVersion);
-        process.exit(-1);
+        console.log("Version of Node does not support recursive directory deletes. Be sure you are starting with a clean workspace!");
+
     }
     console.log("Using node version " + version);
 }
