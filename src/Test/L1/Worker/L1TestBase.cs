@@ -32,7 +32,7 @@ namespace Microsoft.VisualStudio.Services.Agent.Tests.L1.Worker
 
         private TimeSpan _channelTimeout = TimeSpan.FromSeconds(Math.Min(Math.Max(100, 30), 300));
 
-        private List<IAgentService> _mockedServices;
+        private List<IAgentService> _mockedServices = new List<IAgentService>();
 
         protected List<Timeline> GetTimelines()
         {
