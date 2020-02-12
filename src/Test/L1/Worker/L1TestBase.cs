@@ -7,6 +7,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.TeamFoundation.DistributedTask.WebApi;
@@ -66,7 +67,8 @@ namespace Microsoft.VisualStudio.Services.Agent.Tests.L1.Worker
             return _mockedServices.Where(x => x is T).Cast<T>().FirstOrDefault();
         }
 
-        protected async Task<TestResults> RunWorker(Pipelines.AgentJobRequestMessage message)
+        protected async Task<TestResults> RunWorker(Pipelines.AgentJobRequestMessage message,
+            [CallerMemberName] string testName = "")
         {
             // Clear working directory
             var path = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) + "/w";
@@ -78,6 +80,10 @@ namespace Microsoft.VisualStudio.Services.Agent.Tests.L1.Worker
             using (L1HostContext context = new L1HostContext("Agent"))
             {
                 SetupMocks(context);
+
+                // Use different working directories for each test
+                var config = GetMockedService<FakeConfigurationStore>();
+                config.WorkingDirectoryName = testName;
 
                 await SetupMessage(context, message);
 

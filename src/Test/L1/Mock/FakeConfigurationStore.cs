@@ -5,11 +5,10 @@ namespace Microsoft.VisualStudio.Services.Agent.Tests.L1.Worker
 {
     public class FakeConfigurationStore : AgentService, IConfigurationStore
     {
-        public FakeConfigurationStore()
-        {
-            RootFolder = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-        }
-        public string RootFolder { get; internal set; }
+        public string WorkingDirectoryName { get; set; }
+
+        public string RootFolder => Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) + "/TestRuns/" + WorkingDirectoryName;
+
         public bool IsConfigured()
         {
             return true;
