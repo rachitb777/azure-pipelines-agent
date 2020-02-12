@@ -118,10 +118,11 @@ namespace Microsoft.VisualStudio.Services.Agent.Worker
 
                         taskConditionMap[task.Id] = condition;
                     }
-                    foreach (var knob in AgentKnobs.GetAllKnobs())
+                    context.Output("Checking jobs knob settings.");
+                    foreach (var knob in ControlPanel.GetAllKnobsFor<AgentKnobs>())
                     {
                         var value = knob.GetValue(jobContext);
-                        if (value.Source != KnobSource.BuiltInDefault)
+                        if (value.Source.GetType() != typeof(BuiltInDefaultKnobSource))
                         {
                             var tag = "";
                             if (knob.IsDeprecated)
@@ -132,8 +133,8 @@ namespace Microsoft.VisualStudio.Services.Agent.Worker
                             {
                                 tag = "(EXPERIMENTAL)";
                             }
-                            var outputLine = $"{knob.Name}={value.AsString()} {value.Source} {value.Which} {tag}";
-                            if (!string.IsNullOrEmpty(tag))
+                            var outputLine = $"   Knob: {knob.Name} = {value.AsString()} Source: {value.Source.GetDisplayString()} {tag}";
+                            if (knob.IsDeprecated)
                             {
                                 context.Warning(outputLine);
                             }
@@ -143,6 +144,7 @@ namespace Microsoft.VisualStudio.Services.Agent.Worker
                             }
                         }
                     }
+                    context.Output("Finished checking job knob settings.");
 
                     if (PlatformUtil.RunningOnWindows)
                     {

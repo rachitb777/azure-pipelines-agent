@@ -8,24 +8,16 @@ using Microsoft.VisualStudio.Services.Agent.Util;
 
 namespace Agent.Sdk
 {
-    public enum KnobSource
-    {
-        BuiltInDefault,
-        EnvironmentVariable,
-        RuntimeVariable,
-    };
 
     public class KnobValue
     {
-        public KnobSource Source { get;  private set;}
-        public string Which { get; private set; }
+        public IKnobSource Source { get;  private set;}
         private string _value;
 
-        public KnobValue(string value, KnobSource source, string which=null)
+        public KnobValue(string value, IKnobSource source)
         {
             _value = value;
             Source = source;
-            Which = which;
         }
 
         public string AsString()
@@ -39,96 +31,185 @@ namespace Agent.Sdk
         }
     }
 
-    public class AgentKnobs : ControlPanel
+    public class AgentKnobs
     {
-        public static readonly IKnob UseNode10 = new Knob(nameof(UseNode10), "false", "Forces the agent to use Node 10 handler for all Node-based tasks")
-        {
-            EnvironmentVariableNames = new List<string>{ "AGENT_USE_NODE10" },
-            RuntimeVariableNames = new List<string>{ "AGENT_USE_NODE10" }
-        };
+        public static readonly Knob UseNode10 = new Knob(nameof(UseNode10), "Forces the agent to use Node 10 handler for all Node-based tasks",
+                                                        new RuntimeKnobSource("AGENT_USE_NODE10"),
+                                                        new EnvironmentKnobSource("AGENT_USE_NODE10"),
+                                                        new BuiltInDefaultKnobSource("false"));
+
+
     }
 
     public class ControlPanel
     {
-
-        private static readonly IDictionary<string,IKnob> _knobs = new Dictionary<string,IKnob>();
-
-        public class Knob : IKnob
+        public static List<Knob> GetAllKnobsFor<T>()
         {
-            public string Name { get; private set; }
-            public List<string> EnvironmentVariableNames { get; set; }
-            public List<string> RuntimeVariableNames { get; set; }
-            // public TBDType CommandLineOption {get; private set;}
-            public string Description { get; private set; }
-            public bool IsDeprecated {get; set; } = false;  // is going away at a future date
-            public bool IsExperimental {get; set; } = false; // may go away at a future date
-            public string DefaultValue {get; private set; }
-
-            public Knob(string name, string defaultValue, string description)
+            Type type = typeof(T);
+            List<Knob> allKnobs = new List<Knob>();
+            foreach (var info in type.GetFields(BindingFlags.Public | BindingFlags.Static | BindingFlags.DeclaredOnly))
             {
-                Name = name;
-                DefaultValue = defaultValue;
-                Description = description;
-                if (AgentKnobs._knobs.ContainsKey(name))
+                var instance = new Knob();
+                var locatedValue = info.GetValue(instance) as Knob;
+
+                if (locatedValue != null)
                 {
-                    throw new ArgumentException($"Already have a knob called {name}", nameof(name));
+                    allKnobs.Add(locatedValue);
                 }
-                AgentKnobs._knobs[name] = this;
             }
-
-            public KnobValue GetValue(IKnobValueContext context)
-            {
-                ArgUtil.NotNull(context, nameof(context));
-                //TODO: First thing we need to do is check if deprecated or experimental and throw an event that
-                //      can be logged
-
-                // proposed order of operations is
-                // 1. Run time variables
-                // 2. Command Line Options (Not Yet Implemented)
-                // 3. Environment Variables
-                // 4. Default
-                if (!(RuntimeVariableNames is null))
-                {
-                    foreach (var runTimeVar in RuntimeVariableNames)
-                    {
-                        var value = context.GetVariableValueOrDefault(runTimeVar);
-                        if (value != null)
-                        {
-                            return new KnobValue(value, KnobSource.RuntimeVariable, runTimeVar);
-                        }
-                    }
-                }
-                if (!(EnvironmentVariableNames is null))
-                {
-                    var scopedEnvironment = context.GetScopedEnvironment();
-                    foreach (var envVar in EnvironmentVariableNames)
-                    {
-                        var value = scopedEnvironment.GetEnvironmentVariable(envVar);
-                        if (!string.IsNullOrEmpty(value))
-                        {
-                            return new KnobValue(value, KnobSource.EnvironmentVariable, envVar);
-                        }
-                    }
-                }
-
-                return new KnobValue(DefaultValue, KnobSource.BuiltInDefault);
-            }
-        }
-
-        public static ReadOnlyCollection<IKnob> GetAllKnobs()
-        {
-            return new List<IKnob>(_knobs.Values).AsReadOnly();
+            return allKnobs;
         }
     }
 
-    public interface IKnob
+    public class DeprecatedKnob : Knob
     {
-        string Name { get; }
-        List<string> EnvironmentVariableNames { get; }
-        List<string> RuntimeVariableNames { get; }
-        string Description { get; }
-        bool IsDeprecated { get; }
-        bool IsExperimental { get; }
+        public override bool IsDeprecated => true;
+        public DeprecatedKnob(string name, string description, params IKnobSource[] sources) : base(name, description, sources)
+        {
+        }
+    }
+
+    public class ExperimentalKnob : Knob
+    {
+        public override bool IsExperimental => true;
+        public ExperimentalKnob(string name, string description, params IKnobSource[] sources) : base(name, description, sources)
+        {
+        }
+    }
+
+    public class Knob
+    {
+        public string Name { get; private set; }
+        public IKnobSource Source { get; private set;}
+        public string Description { get; private set; }
+        public virtual bool IsDeprecated => false;  // is going away at a future date
+        public virtual bool IsExperimental => false; // may go away at a future date
+
+        public Knob(string name, string description, params IKnobSource[] sources)
+        {
+            Name = name;
+            Description = description;
+            Source = new CompositeKnobFetcher(sources);
+        }
+
+        public Knob()
+        {
+        }
+
+        public KnobValue GetValue(IKnobValueContext context)
+        {
+            ArgUtil.NotNull(context, nameof(context));
+            ArgUtil.NotNull(Source, nameof(Source));
+
+            return Source.GetValue(context);
+        }
+    }
+
+    public interface IKnobSource
+    {
         KnobValue GetValue(IKnobValueContext context);
+        string GetDisplayString();
+    }
+
+    public class BuiltInDefaultKnobSource : IKnobSource
+    {
+        private string _value;
+
+        public BuiltInDefaultKnobSource(string value)
+        {
+            _value = value;
+        }
+
+        public KnobValue GetValue(IKnobValueContext context)
+        {
+            return new KnobValue(_value, this);
+        }
+
+        public string GetDisplayString()
+        {
+            return "Default";
+        }
+    }
+
+    public class EnvironmentKnobSource : IKnobSource
+    {
+        private string _envVar;
+
+        public EnvironmentKnobSource(string envVar)
+        {
+            _envVar = envVar;
+        }
+
+        public KnobValue GetValue(IKnobValueContext context)
+        {
+            var scopedEnvironment = context.GetScopedEnvironment();
+            var value = scopedEnvironment.GetEnvironmentVariable(_envVar);
+            if (!string.IsNullOrEmpty(value))
+            {
+                return new KnobValue(value, this);
+            }
+            return null;
+        }
+
+        public string GetDisplayString()
+        {
+            return $"${{{_envVar}}}";
+        }
+    }
+
+    public class RuntimeKnobSource : IKnobSource
+    {
+        private string _runTimeVar;
+        public RuntimeKnobSource(string runTimeVar)
+        {
+            _runTimeVar = runTimeVar;
+        }
+
+        public KnobValue GetValue(IKnobValueContext context)
+        {
+            var value = context.GetVariableValueOrDefault(_runTimeVar);
+            if (!string.IsNullOrEmpty(value))
+            {
+                return new KnobValue(value, this);
+            }
+            return null;
+        }
+
+        public string GetDisplayString()
+        {
+            return $"$({_runTimeVar})";
+        }
+    }
+
+    public class CompositeKnobFetcher : IKnobSource
+    {
+        private IKnobSource[] _sources;
+
+        public CompositeKnobFetcher(params IKnobSource[] sources)
+        {
+            _sources = sources;
+        }
+
+        public KnobValue GetValue(IKnobValueContext context)
+        {
+            foreach (var source in _sources)
+            {
+                var value = source.GetValue(context);
+                if (!(value is null))
+                {
+                    return value;
+                }
+            }
+            return null;
+        }
+        public string GetDisplayString()
+        {
+            var strings = new List<string>();
+            foreach (var source in _sources)
+            {
+                strings.Add(source.GetDisplayString());
+            }
+            return string.Join(", ", strings);
+        }
     }
 }
