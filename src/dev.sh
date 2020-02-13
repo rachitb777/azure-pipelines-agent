@@ -21,15 +21,15 @@ DOTNETSDK_VERSION="2.1.509"
 DOTNETSDK_INSTALLDIR="$DOTNETSDK_ROOT/$DOTNETSDK_VERSION"
 AGENT_VERSION=$(cat "$SCRIPT_DIR/agentversion")
 
-DOTNET_ERROR_PREFIX=""
-DOTNET_WARNING_PREFIX=""
+# DOTNET_ERROR_PREFIX=""
+# DOTNET_WARNING_PREFIX=""
 
-# if $AGENT_NAME is set, assume we are running inside a ADO pipeline
-# and add these prefixes to output of dotnet to elevate errors/warnings
-if  [[ ! -z "$AGENT_NAME" ]]; then
+# # if $AGENT_NAME is set, assume we are running inside a ADO pipeline
+# # and add these prefixes to output of dotnet to elevate errors/warnings
+# if  [[ ! -z "$AGENT_NAME" ]]; then
     DOTNET_ERROR_PREFIX="##vso[task.logissue type=error]"
     DOTNET_WARNING_PREFIX="##vso[task.logissue type=warning]"
-fi
+# fi
 
 
 
