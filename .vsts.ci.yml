@@ -114,6 +114,8 @@ jobs:
     parameters:
       componentDetection: 'true'
       testLogTitle: 'Linux-x64'
+    env:
+      ADO_ENABLE_LOGISSUE: true
 
   # Create agent package zip
   - script: ./dev.sh package Release
