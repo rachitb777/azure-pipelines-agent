@@ -25,7 +25,7 @@ DOTNET_ERROR_PREFIX=""
 DOTNET_WARNING_PREFIX=""
 
 # # if $ADO_ENABLE_LOGISSUE is set, add these prefixes to output of dotnet to elevate errors/warnings
-if  [[ ! -z "$ADO_ENABLE_LOGISSUE" ]]; then
+if  [[ "$ADO_ENABLE_LOGISSUE" == "true" ]]; then
     DOTNET_ERROR_PREFIX="##vso[task.logissue type=error]"
     DOTNET_WARNING_PREFIX="##vso[task.logissue type=warning]"
 fi
