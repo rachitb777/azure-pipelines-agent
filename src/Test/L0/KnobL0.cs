@@ -3,6 +3,7 @@
 
 using System;
 using Agent.Sdk;
+using Agent.Sdk.Knob;
 using Microsoft.VisualStudio.Services.Agent.Worker;
 using Xunit;
 using Moq;

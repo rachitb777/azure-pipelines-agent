@@ -12,6 +12,7 @@ using Microsoft.VisualStudio.Services.Agent.Util;
 using System.Linq;
 using System.Diagnostics;
 using Agent.Sdk;
+using Agent.Sdk.Knob;
 
 namespace Microsoft.VisualStudio.Services.Agent.Worker
 {
@@ -118,7 +119,7 @@ namespace Microsoft.VisualStudio.Services.Agent.Worker
 
                         taskConditionMap[task.Id] = condition;
                     }
-                    context.Output("Checking jobs knob settings.");
+                    context.Output("Checking job knob settings.");
                     foreach (var knob in Knob.GetAllKnobsFor<AgentKnobs>())
                     {
                         var value = knob.GetValue(jobContext);
