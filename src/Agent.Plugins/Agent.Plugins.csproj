@@ -6,11 +6,6 @@
     <OutputType>Library</OutputType>
   </PropertyGroup>
 
-  <PropertyGroup>
-    <CodeAnalysisRuleSet>..\rules.ruleset</CodeAnalysisRuleSet>
-    <RunCodeAnalysis>true</RunCodeAnalysis>
-  </PropertyGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\Agent.Sdk\Agent.Sdk.csproj" />
   </ItemGroup>

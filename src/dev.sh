@@ -30,8 +30,6 @@ if  [[ "$ADO_ENABLE_LOGISSUE" == "true" ]]; then
     DOTNET_WARNING_PREFIX="##vso[task.logissue type=warning]"
 fi
 
-
-
 pushd "$SCRIPT_DIR"
 
 BUILD_CONFIG="Debug"

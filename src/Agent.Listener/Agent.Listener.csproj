@@ -6,11 +6,6 @@
     <OutputType>Exe</OutputType>
   </PropertyGroup>
 
-  <PropertyGroup>
-    <CodeAnalysisRuleSet>..\rules.ruleset</CodeAnalysisRuleSet>
-    <RunCodeAnalysis>true</RunCodeAnalysis>
-  </PropertyGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\Agent.Sdk\Agent.Sdk.csproj" />
     <ProjectReference Include="..\Microsoft.VisualStudio.Services.Agent\Microsoft.VisualStudio.Services.Agent.csproj" />

@@ -36,6 +36,7 @@ namespace Agent.Sdk
         private VssConnection _connection;
         private readonly object _stdoutLock = new object();
         private readonly ITraceWriter _trace; // for unit tests
+        private static string _failTaskCommand = "##vso[task.complete result=Failed;]";
 
         public AgentTaskPluginExecutionContext()
             : this(null)
@@ -58,9 +59,6 @@ namespace Agent.Sdk
         public Dictionary<string, string> Inputs { get; set; }
         public ContainerInfo Container {get; set; }
         public Dictionary<string, string> JobSettings { get; set; }
-
-        public static string FailTaskCommand = "##vso[task.complete result=Failed;]";
-
 
         [JsonIgnore]
         public VssConnection VssConnection
@@ -165,7 +163,7 @@ namespace Agent.Sdk
         public void Error(string message)
         {
             Output($"##vso[task.logissue type=error;]{Escape(message)}");
-            Output(FailTaskCommand);
+            Output(_failTaskCommand);
         }
 
         public void Debug(string message)
