@@ -36,5 +36,14 @@ namespace Microsoft.VisualStudio.Services.Agent.Tests.L1.Worker
             _serviceTypes.TryAdd(typeof(T), target);
             return GetService<T>();
         }
+
+        public override string GetDirectory(WellKnownDirectory directory)
+        {
+            if (directory == WellKnownDirectory.Bin)
+            {
+                return Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+            }
+            return base.GetDirectory(directory);
+        }
     }
 }

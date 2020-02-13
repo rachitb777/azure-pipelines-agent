@@ -13,6 +13,10 @@
     <LayoutRoot>$(MSBuildProjectDirectory)/../_layout/unknown</LayoutRoot>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <L1Root>$(MSBuildProjectDirectory)/../_l1/bin</L1Root>
+  </PropertyGroup>
+
   <Target Name="GenerateConstant">
     <Exec Command="git rev-parse HEAD" ConsoleToMSBuild="true">
       <Output TaskParameter="ConsoleOutput" PropertyName="GitInfoCommitHash" />
@@ -70,9 +74,22 @@
     <Exec Command="dotnet test Test/Test.csproj --settings $(MSBuildProjectDirectory)/Test/L1.runsettings --no-build --logger:trx --collect:&quot;Code Coverage&quot;  --filter &quot;Level=L0&amp;SkipOn!=$(SkipOn)&quot;" ConsoleToMSBuild="true" />
   </Target>
   
-  <Target Name="TestL1" DependsOnTargets="GenerateConstant">
-    <Exec Command="dotnet build Test/Test.csproj -c $(BUILDCONFIG) /p:PackageRuntime=$(PackageRuntime)" ConsoleToMSBuild="true" />
-    <Exec Command="dotnet test Test/Test.csproj --settings $(MSBuildProjectDirectory)/Test/L1.runsettings --no-build --logger:trx --collect:&quot;Code Coverage&quot;  --filter &quot;Level=L1&amp;SkipOn!=$(SkipOn)&quot;" ConsoleToMSBuild="true" />
+  <Target Name="TestL1" DependsOnTargets="CleanL1;GenerateConstant">
+    <MSBuild Targets="Restore"
+             BuildInParallel="false"
+             Projects="@(ProjectFiles)"
+             SkipNonExistentProjects="false"
+             StopOnFirstFailure="true" />
+
+    <MSBuild Targets="Publish"
+             BuildInParallel="false"
+             Projects="@(ProjectFiles)"
+             SkipNonExistentProjects="false"
+             StopOnFirstFailure="true"
+             Properties="Configuration=$(BUILDCONFIG);PackageRuntime=$(PackageRuntime);Version=$(AgentVersion);RuntimeIdentifier=$(PackageRuntime);PublishDir=$(L1Root)" />
+
+    <Exec Command="dotnet build Test/Test.csproj -c $(BUILDCONFIG) /p:PackageRuntime=$(PackageRuntime) -o $(L1Root)" ConsoleToMSBuild="true" />
+    <Exec Command="dotnet test Test/Test.csproj --settings $(MSBuildProjectDirectory)/Test/L1.runsettings -o $(L1Root) --no-build --logger:trx --collect:&quot;Code Coverage&quot;  --filter &quot;Level=L1&amp;SkipOn!=$(SkipOn)&quot;" ConsoleToMSBuild="true" />
   </Target>
 
   <Target Name="Layout" DependsOnTargets="Clean;Build">
@@ -91,6 +108,10 @@
     </ItemGroup>
 
     <Delete Files="@(LayoutRootFilesToDelete)" />
+  </Target>
+
+  <Target Name="CleanL1">
+    <RemoveDir  Directories="$(L1Root)" ContinueOnError="WarnAndContinue" />
   </Target>
 
   <Target Name="Clean">

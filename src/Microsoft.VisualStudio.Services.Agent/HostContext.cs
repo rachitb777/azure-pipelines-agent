@@ -146,7 +146,7 @@ namespace Microsoft.VisualStudio.Services.Agent
             }
         }
 
-        public string GetDirectory(WellKnownDirectory directory)
+        public virtual string GetDirectory(WellKnownDirectory directory)
         {
             string path;
             switch (directory)
