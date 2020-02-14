@@ -11,9 +11,7 @@
   "license": "MIT",
   "dependencies": {
     "@octokit/rest": "^16.43.1",
-    "install": "^0.13.0",
     "natural-sort": "^1.0.0",
-    "node-getopt": "^0.3.2",
-    "npm": "^6.13.7",
+    "node-getopt": "^0.3.2"
   }
 }
