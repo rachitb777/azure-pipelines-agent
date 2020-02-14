@@ -20,6 +20,7 @@ var opt = require('node-getopt').create([
     ['',  'dryrun',               'Dry run only, do not actually commit new release'],
     ['',  'unattended',           'This is run in a pipeline, so do not prompt for confirmation of release notes'],
     ['',  'derivedFrom=version',  'Used to get PRs merged since this release was created', 'latest'],
+    ['',  'branch=branch',        'Branch to select PRs merged into', 'master'],
     ['h', 'help',                 'Display this help'],
   ])
   .setHelp(
@@ -115,12 +116,13 @@ async function fetchPRsSinceLastReleaseAndEditReleaseNotes(newRelease, callback)
             tag
         });
 
+        var branch = opt.options.branch;
         var lastReleaseDate = releaseInfo.data.published_at;
-        console.log(`Fetching PRs merged since ${lastReleaseDate}`);
+        console.log(`Fetching PRs merged since ${lastReleaseDate} on ${branch}`);
         try
         {
             var results = await octokit.search.issuesAndPullRequests({
-                q:`type:pr+is:merged+repo:${owner}/${repo}+merged:>=${lastReleaseDate}`,
+                q:`type:pr+is:merged+repo:${owner}/${repo}+base:${branch}+merged:>=${lastReleaseDate}`,
                 order: 'asc',
                 sort: 'created'
             })
