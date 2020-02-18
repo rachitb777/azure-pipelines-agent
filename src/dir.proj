@@ -86,10 +86,10 @@
              Projects="@(ProjectFiles)"
              SkipNonExistentProjects="false"
              StopOnFirstFailure="true"
-             Properties="Configuration=$(BUILDCONFIG);PackageRuntime=$(PackageRuntime);Version=$(AgentVersion);RuntimeIdentifier=$(PackageRuntime);PublishDir=$(L1Root)" />
+             Properties="Configuration=$(BUILDCONFIG);PackageRuntime=$(PackageRuntime);Version=1.0.0.0;RuntimeIdentifier=$(PackageRuntime);PublishDir=$(L1Root)" />
 
     <Exec Command="dotnet build Test/Test.csproj -c $(BUILDCONFIG) /p:PackageRuntime=$(PackageRuntime) -o $(L1Root)" ConsoleToMSBuild="true" />
-    <Exec Command="dotnet test Test/Test.csproj --settings $(MSBuildProjectDirectory)/Test/L1.runsettings -o $(L1Root) --no-build --logger:trx --collect:&quot;Code Coverage&quot;  --filter &quot;Level=L1&amp;SkipOn!=$(SkipOn)&quot;" ConsoleToMSBuild="true" />
+    <Exec Command="dotnet test Test/Test.csproj -o $(L1Root) --no-build --logger:trx --filter &quot;Level=L1&amp;SkipOn!=$(SkipOn)&quot;" ConsoleToMSBuild="true" />
   </Target>
 
   <Target Name="Layout" DependsOnTargets="Clean;Build">
