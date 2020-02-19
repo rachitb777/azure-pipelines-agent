@@ -109,7 +109,13 @@ namespace Microsoft.VisualStudio.Services.Agent.Worker
         private void AddUserSuppliedSecret(String secret)
         {
             ArgUtil.NotNull(secret, nameof(secret));
-            HostContext.SecretMasker.AddValue(secret);
+            
+            // for secret which are just single blank space, skip masking. Masking a single space character creates unreadable logs.
+            // We will provide warning message in the UI when user creates a secret which is just a space.
+            if (secret != ' ') 
+            {
+                HostContext.SecretMasker.AddValue(secret);
+            }
             // for variables, it is possible that they are used inside a shell which would strip off surrounding quotes
             // so, if the value is surrounded by quotes, add a quote-timmed version of the secret to our masker as well
             // This addresses issue #2525
